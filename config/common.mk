@@ -1,7 +1,7 @@
-# Branding
-$(call inherit-product, vendor/aosp/config/branding.mk)
+# Main version
+$(call inherit-product, vendor/dora/config/main_version.mk)
 
-PRODUCT_BRAND ?= PixelExperience
+PRODUCT_BRAND ?= DoraemonOS
 
 PRODUCT_BUILD_PROP_OVERRIDES += BUILD_UTC_DATE=0
 
@@ -36,17 +36,42 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += persist.sys.usb.config=none
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += persist.sys.strictmode.disable=true
 endif
 
+
+# Enable WiFi Display
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.wfd.nohdcp=1 \
+    persist.debug.wfd.enable=1 \
+    persist.sys.wfd.virtual=0
+
+# Backup Tool
+PRODUCT_COPY_FILES += \
+    vendor/dora/prebuilt/common/bin/backuptool.sh:install/bin/backuptool.sh \
+    vendor/dora/prebuilt/common/bin/backuptool.functions:install/bin/backuptool.functions \
+    vendor/dora/prebuilt/common/bin/50-dora.sh:$(TARGET_COPY_OUT_SYSTEM)/addon.d/50-dora.sh
+
+ifneq ($(strip $(AB_OTA_PARTITIONS) $(AB_OTA_POSTINSTALL_CONFIG)),)
+PRODUCT_COPY_FILES += \
+    vendor/dora/prebuilt/common/bin/backuptool_ab.sh:$(TARGET_COPY_OUT_SYSTEM)/bin/backuptool_ab.sh \
+    vendor/dora/prebuilt/common/bin/backuptool_ab.functions:$(TARGET_COPY_OUT_SYSTEM)/bin/backuptool_ab.functions \
+    vendor/dora/prebuilt/common/bin/backuptool_postinstall.sh:$(TARGET_COPY_OUT_SYSTEM)/bin/backuptool_postinstall.sh
+ifneq ($(TARGET_BUILD_VARIANT),user)
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+    ro.ota.allow_downgrade=true
+endif
+endif
+
 # Some permissions
 PRODUCT_COPY_FILES += \
-    vendor/aosp/config/permissions/privapp-permissions-lineagehw.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/privapp-permissions-lineagehw.xml
+    vendor/dora/config/permissions/backup.xml:system/etc/sysconfig/backup.xml \
+    vendor/dora/config/permissions/dora-sysconfig.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/sysconfig/dora-sysconfig.xml
 
 # Copy all custom init rc files
-PRODUCT_COPY_FILES += \
-    vendor/aosp/prebuilt/common/etc/init/init.pixelexperience-updater.rc:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/init/init.pixelexperience-updater.rc
+$(foreach f,$(wildcard vendor/cherish/prebuilt/common/etc/init/*.rc),\
+    $(eval PRODUCT_COPY_FILES += $(f):system/etc/init/$(notdir $f)))
 
 # Enable Android Beam on all targets
 PRODUCT_COPY_FILES += \
-    vendor/aosp/config/permissions/android.software.nfc.beam.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.software.nfc.beam.xml
+    vendor/dora/config/permissions/android.software.nfc.beam.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.software.nfc.beam.xml
 
 # Enable SIP+VoIP on all targets
 PRODUCT_COPY_FILES += \
@@ -58,11 +83,11 @@ PRODUCT_COPY_FILES += \
 
 # Enforce privapp-permissions whitelist
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
-    ro.control_privapp_permissions=enforce
+    ro.control_privapp_permissions=log
 
 # Power whitelist
 PRODUCT_COPY_FILES += \
-    vendor/aosp/config/permissions/custom-power-whitelist.xml:system/etc/sysconfig/custom-power-whitelist.xml
+    vendor/dora/config/permissions/privapp-permissions-dora-system_ext.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/privapp-permissions-dora-system_ext.xml \
 
 # Do not include art debug targets
 PRODUCT_ART_TARGET_INCLUDE_DEBUG_BUILD := false
@@ -98,10 +123,10 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 
 # Overlays
 PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += \
-    vendor/aosp/overlay
+    vendor/dora/overlay
 
 PRODUCT_PACKAGE_OVERLAYS += \
-    vendor/aosp/overlay/common
+    vendor/dora/overlay/common
 
 # TouchGestures
 PRODUCT_PACKAGES += \
@@ -194,22 +219,26 @@ TARGET_SUPPORTS_QUICK_TAP ?= false
 #    frameworks/native/data/etc/android.hardware.biometrics.face.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.biometrics.face.xml
 #endif
 
+# Enable one-handed mode
+PRODUCT_PRODUCT_PROPERTIES += \
+    ro.support_one_handed_mode=true
+
 # Audio
-$(call inherit-product, vendor/aosp/config/audio.mk)
+$(call inherit-product, vendor/dora/config/audio.mk)
 
 # Bootanimation
-$(call inherit-product, vendor/aosp/config/bootanimation.mk)
+$(call inherit-product, vendor/dora/config/bootanimation.mk)
 
 # Fonts
-$(call inherit-product, vendor/aosp/config/fonts.mk)
+$(call inherit-product, vendor/dora/config/fonts.mk)
 
 # GApps
 $(call inherit-product, vendor/gapps/config.mk)
 
 # OTA
-$(call inherit-product, vendor/aosp/config/ota.mk)
+$(call inherit-product, vendor/dora/config/ota.mk)
 
 # RRO Overlays
-$(call inherit-product, vendor/aosp/config/rro_overlays.mk)
+$(call inherit-product, vendor/dora/config/rro_overlays.mk)
 
 -include $(WORKSPACE)/build_env/image-auto-bits.mk
